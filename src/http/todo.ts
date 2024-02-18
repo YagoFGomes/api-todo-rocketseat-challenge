@@ -4,9 +4,7 @@ import { z } from 'zod';
 
 export async function toDoRoutes(app: FastifyInstance){
     app.post('/tasks', async (request, reply) => {
-        // Deve ser possível criar uma task no banco de dados, enviando os campos `title` e `description` por meio do `body` da requisição.
-        // Ao criar uma task, os campos: `id`, `created_at`, `updated_at` e `completed_at` devem ser preenchidos automaticamente, conforme a orientação das propriedades acima.
-        
+
         const createTaskBodySchema = z.object({
             title: z.string(),
             description: z.string(),
@@ -25,9 +23,6 @@ export async function toDoRoutes(app: FastifyInstance){
     });
 
     app.get('/tasks', async (request, reply)=>{
-        // Deve ser possível listar todas as tasks salvas no banco de dados.
-        // Também deve ser possível realizar uma busca, filtrando as tasks pelo `title` e `description`
-
         const querySchema = z.object({
             title: z.string().optional(),
             description: z.string().optional()
@@ -57,20 +52,7 @@ export async function toDoRoutes(app: FastifyInstance){
         return reply.status(200).send({ tasks });
     });
 
-    app.put('/tasks/:id', ()=>{
-        // Deve ser possível atualizar uma task pelo `id`.
-
-        // No `body` da requisição, deve receber somente o `title` e/ou `description` para serem atualizados.
-
-        // Se for enviado somente o `title`, significa que o `description` não pode ser atualizado e vice-versa.
-
-        // Antes de realizar a atualização, deve ser feito uma validação se o `id` pertence a uma task salva no banco de dados.
-    });
-
     app.delete('/tasks/:id', async (request, reply)=>{
-        // Deve ser possível remover uma task pelo `id`.
-
-        // Antes de realizar a remoção, deve ser feito uma validação se o `id` pertence a uma task salva no banco de dados.
         const queryDeleteSchema = z.object({
             id: z.string().uuid()
         });
@@ -95,6 +77,46 @@ export async function toDoRoutes(app: FastifyInstance){
 
         return reply.status(200).send();
     });
+
+    app.put('/tasks/:id', async (request, reply) => {
+        // Passo 1: Capturar o 'id' da URL
+
+        const idTaskParams = z.object({
+            id: z.string().uuid(),
+        });
+
+        const { id } = idTaskParams.parse(request.params);
+    
+        // Passo 2: Validar e Extrair os Dados do 'body' da Requisição
+        const toUpdateSchema = z.object({
+            title: z.string().optional(),
+            description: z.string().optional()
+        });
+    
+        // Validar o 'body' da requisição
+        const validationResult = toUpdateSchema.safeParse(request.body);
+        if (!validationResult.success) {
+            return reply.status(400).send();
+        }
+    
+        const updateData = validationResult.data;
+    
+        // Passo 3: Verificar se a Task com o 'id' fornecido existe
+        const existingTask = await prisma.task.findUnique({ where: { id } });
+
+        if (!existingTask) {
+            return reply.status(404).send();
+        }
+    
+        // Passo 4: Atualizar a Task no Banco de Dados
+        const updatedTask = await prisma.task.update({
+            where: { id: id },
+            data: updateData
+        });
+    
+        return reply.status(200).send(updatedTask);
+    });
+    
 
     app.patch('/tasks/:id/complete', ()=>{
         // Deve ser possível marcar a task como completa ou não. Isso significa que se a task estiver concluída, deve voltar ao seu estado “normal”.
