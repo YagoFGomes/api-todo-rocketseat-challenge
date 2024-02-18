@@ -122,10 +122,10 @@ export async function toDoRoutes(app: FastifyInstance){
             data: updateData
         });
     
-        return reply.status(200).send(updatedTask);
+        return reply.status(200).send({tasks:[updatedTask]});
     });
     
-    app.patch('/tasks/:id/complete', async (request, reply)=>{
+    app.patch('/tasks/:id/completed', async (request, reply)=>{
         const idTaksParams = z.object({
             id: z.string().uuid()
         });
@@ -147,6 +147,31 @@ export async function toDoRoutes(app: FastifyInstance){
             }
         });
         
-        return reply.status(200).send({task: taskToComplete});
+        return reply.status(200).send({tasks: [taskToComplete]});
+    });
+
+    app.patch('/tasks/:id/uncompleted', async (request, reply)=>{
+        const idTaksParams = z.object({
+            id: z.string().uuid()
+        });
+
+        const { id } = idTaksParams.parse(request.params);
+
+        const taskExists = await prisma.task.findUnique({
+            where: {id}
+        });
+
+        if(!taskExists){
+            return reply.status(404).send();
+        }
+
+        const taskToComplete = await prisma.task.update({
+            where: { id },
+            data: {
+                completed_at: null
+            }
+        });
+        
+        return reply.status(200).send({tasks: [taskToComplete]});
     });
 }
