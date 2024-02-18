@@ -33,7 +33,6 @@ export async function toDoRoutes(app: FastifyInstance){
             description: z.string().optional()
         });
     
-        // Validar a query
         const validatedQuery = querySchema.safeParse(request.query);
     
         if (!validatedQuery.success) {
@@ -58,7 +57,6 @@ export async function toDoRoutes(app: FastifyInstance){
         return reply.status(200).send({ tasks });
     });
 
-
     app.put('/tasks/:id', ()=>{
         // Deve ser possível atualizar uma task pelo `id`.
 
@@ -69,14 +67,36 @@ export async function toDoRoutes(app: FastifyInstance){
         // Antes de realizar a atualização, deve ser feito uma validação se o `id` pertence a uma task salva no banco de dados.
     });
 
-
-    app.delete('/tasks/:id', ()=>{
+    app.delete('/tasks/:id', async (request, reply)=>{
         // Deve ser possível remover uma task pelo `id`.
 
         // Antes de realizar a remoção, deve ser feito uma validação se o `id` pertence a uma task salva no banco de dados.
+        const queryDeleteSchema = z.object({
+            id: z.string().uuid()
+        });
+
+        const queryDeleteTask = queryDeleteSchema.parse(request.params);
+
+        const toDeleteTask = await prisma.task.findUnique({
+            where: {
+                id: queryDeleteTask.id
+            }
+        });
+
+        if(!toDeleteTask){
+            return reply.status(404).send();
+        }
+
+        await prisma.task.delete({
+            where: {
+                id: queryDeleteTask.id
+            }
+        });
+
+        return reply.status(200).send();
     });
 
-    app.delete('/tasks/:id/complete', ()=>{
+    app.patch('/tasks/:id/complete', ()=>{
         // Deve ser possível marcar a task como completa ou não. Isso significa que se a task estiver concluída, deve voltar ao seu estado “normal”.
 
         // Antes da alteração, deve ser feito uma validação se o `id` pertence a uma task salva no banco de dados.
