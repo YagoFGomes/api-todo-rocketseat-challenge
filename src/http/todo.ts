@@ -24,11 +24,38 @@ export async function toDoRoutes(app: FastifyInstance){
         return reply.status(201).send();
     });
 
-    app.get('/tasks', (_, reply)=>{
+    app.get('/tasks', async (request, reply)=>{
         // Deve ser possível listar todas as tasks salvas no banco de dados.
-
         // Também deve ser possível realizar uma busca, filtrando as tasks pelo `title` e `description`
-        return reply.status(201).send();
+
+        const querySchema = z.object({
+            title: z.string().optional(),
+            description: z.string().optional()
+        });
+    
+        // Validar a query
+        const validatedQuery = querySchema.safeParse(request.query);
+    
+        if (!validatedQuery.success) {
+            return reply.status(400).send('Parâmetros de consulta inválidos');
+        }
+    
+        const { title, description } = validatedQuery.data;
+    
+        const filter: { title?: { contains: string }; description?: { contains: string } } = {};
+
+        if (title) {
+            filter.title = { contains: title };
+        }
+        if (description) {
+            filter.description = { contains: description };
+        }
+    
+        const tasks = await prisma.task.findMany({
+            where: filter,
+        });
+    
+        return reply.status(200).send({ tasks });
     });
 
 
