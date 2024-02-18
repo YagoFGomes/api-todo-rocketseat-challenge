@@ -117,10 +117,28 @@ export async function toDoRoutes(app: FastifyInstance){
         return reply.status(200).send(updatedTask);
     });
     
+    app.patch('/tasks/:id/complete', async (request, reply)=>{
+        const idTaksParams = z.object({
+            id: z.string().uuid()
+        });
 
-    app.patch('/tasks/:id/complete', ()=>{
-        // Deve ser possível marcar a task como completa ou não. Isso significa que se a task estiver concluída, deve voltar ao seu estado “normal”.
+        const { id } = idTaksParams.parse(request.params);
 
-        // Antes da alteração, deve ser feito uma validação se o `id` pertence a uma task salva no banco de dados.
+        const taskExists = await prisma.task.findUnique({
+            where: {id}
+        });
+
+        if(!taskExists){
+            return reply.status(404).send();
+        }
+
+        const taskToComplete = await prisma.task.update({
+            where: { id },
+            data: {
+                completed_at: new Date()
+            }
+        });
+        
+        return reply.status(200).send({task: taskToComplete});
     });
 }
