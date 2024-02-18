@@ -10,8 +10,16 @@ export async function toDoRoutes(app: FastifyInstance){
             description: z.string(),
         });
 
-        const {title, description} = createTaskBodySchema.parse(request.body);
+        const _body = createTaskBodySchema.safeParse(request.body);
 
+        if(_body.success == false){
+            const message = 'Invalid body';
+            console.error(message, _body.error.format());
+            return reply.status(400).send({message});
+        }
+
+        const {title, description} = _body.data;
+        
         await prisma.task.create({
             data: {
                 title,

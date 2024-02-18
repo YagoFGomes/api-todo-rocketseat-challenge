@@ -13,3 +13,16 @@ services:
       PGDATA: /data/postgres
     volumes:
       - ./data/pg:/data/postgres
+  
+  postgres-test:
+    container_name: primeiro-desafio-pg-test
+    image: postgres
+    ports:
+      - 5433:5432
+    environment:
+      POSTGRES_USER: postgres-test
+      POSTGRES_PASSWORD: docker-test
+      POSTGRES_DB: primeiro-desafio-pg-test
+      PGDATA: /data/postgres-test
+    volumes:
+      - ./data/pg-test:/data/postgres-test
