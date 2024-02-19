@@ -88,6 +88,43 @@ describe('Task Routes', ()=> {
         );
     });
 
+    test('User can get one task by id', async () => {
+        // Criação das tasks
+        const data_1: Prisma.TaskCreateInput = {
+            title: 'New task exemple 1',
+            description: 'Description exemple'
+        };
+
+        await request(app.server)
+            .post('/tasks')
+            .send(data_1);
+
+        // Solicitação para obter todas as tasks
+        const getAllTasksResponse = await request(app.server)
+            .get('/tasks');
+
+        const idTask = getAllTasksResponse.body.tasks[0].id;
+
+        const getTasksResponseById = await request(app.server)
+            .get(`/tasks/${idTask}`);
+
+        // Verifica se a resposta contém um objeto 'tasks'
+        expect(getTasksResponseById.body).toHaveProperty('tasks');
+        // Verifica se o objeto 'tasks' contém exatamente 2 itens
+
+        expect(getTasksResponseById.body.tasks).toHaveLength(1);
+    
+        // Verifica se os itens específicos estão presentes no array 'tasks'
+        expect(getTasksResponseById.body.tasks).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    title: 'New task exemple 1',
+                    description: 'Description exemple'
+                }),
+            ])
+        );
+    });
+
     test('User can filter tasks by title', async () => {
         // Criação das tasks
         const data_1: Prisma.TaskCreateInput = {

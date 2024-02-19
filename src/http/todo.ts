@@ -60,6 +60,26 @@ export async function toDoRoutes(app: FastifyInstance){
         return reply.status(200).send({ tasks });
     });
 
+    app.get('/tasks/:id', async (request, reply)=>{
+        const getTaskParamsSchema = z.object({
+            id: z.string().uuid()
+        });
+    
+        const validatedQuery = getTaskParamsSchema.safeParse(request.params);
+    
+        if (!validatedQuery.success) {
+            return reply.status(400).send('Parâmetros de consulta inválidos');
+        }
+    
+        const { id } = validatedQuery.data;
+    
+        const tasks = await prisma.task.findUnique({
+            where: {id},
+        });
+    
+        return reply.status(200).send({ tasks: [tasks] });
+    });
+
     app.delete('/tasks/:id', async (request, reply)=>{
         const queryDeleteSchema = z.object({
             id: z.string().uuid()
