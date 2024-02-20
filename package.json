@@ -8,6 +8,7 @@
     "start:prod": "node build/server.js",
     "start": "node build/server.js",
     "build": "tsup src --out-dir build",
+    "build-vercel": "prisma migrate deploy && tsup src --out-dir build",
     "lint": "eslint src --ext .ts --fix",
     "test": "vitest run",
     "start:migrate:prod": "prisma migrate deploy && npm run start:prod"
